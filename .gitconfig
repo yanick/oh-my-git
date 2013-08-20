@@ -1,0 +1,38 @@
+[user]
+	name = Arialdo Martini
+	email = arialdomartini@gmail.com
+
+[format]
+	pretty = oneline
+
+[color]
+	ui = true
+
+[alias]
+	co = commit -m
+	go = checkout
+
+	# Show an ascii tree of the current branch
+	tr  = log --graph --pretty=oneline --abbrev-commit
+
+	# Show an ascii tree of all branches
+	tra = log --graph --pretty=oneline --abbrev-commit --all
+
+	# Non-verbose status
+	st = status --short --branch
+
+	# List the last commits of each branch, sorted by date
+	last-branches = for-each-ref --sort=-committerdate --format='%(committerdate:short) %(refname:short) [%(committername)]'
+	lastb = for-each-ref --sort=-committerdate --format='%(committerdate:short) %(refname:short) [%(committername)]'
+
+	# Smarter blame ignores white space (-w), moving text (-M) and  moving text into other files (-C)
+	bl = blame -wMC
+
+	# Undo
+	undo = reset --soft HEAD^
+
+	# Stand-up! Prints a list of what I worked on yesterday so I can be prepared for my stand-up meeting.
+	standup = "!git log --since yesterday  --author `git config user.email` --pretty=short"
+
+	# Prints a list of all files ignored	
+	ignored = ls-files --others -i --exclude-standard
