@@ -13,10 +13,10 @@
 	go = checkout
 
 	# Show an ascii tree of the current branch
-	tr  = log --graph --pretty=oneline --abbrev-commit
+	tr  = log --graph --pretty=format:'%Cred%h%Creset %C(yellow)%d%Creset %s %C(cyan)<%an>%Creset %Cgreen(%cd)' --abbrev-commit --date=relative
 
 	# Show an ascii tree of all branches
-	tra = log --graph --pretty=oneline --abbrev-commit --all
+	tra = log --graph --pretty=format:'%Cred%h%Creset %C(yellow)%d%Creset %s %C(cyan)<%an>%Creset %Cgreen(%cd)' --abbrev-commit --date=relative --all
 
 	# Non-verbose status
 	st = status --short --branch
@@ -31,10 +31,10 @@
 	# Undo
 	undo = reset --soft HEAD^
 
-	# Stand-up! Prints a list of what I worked on yesterday so I can be prepared for my stand-up meeting.
+	# Stand-up! Shows a list of what I worked on yesterday so I can be prepared for my stand-up meeting.
 	standup = "!git log --since yesterday  --author `git config user.email` --pretty=short"
 
-	# Prints a list of all files ignored	
+	# Prints a list of all files ignored
 	ignored = ls-files --others -i --exclude-standard
 
-	aliases = config --get-regexp alias
+	aliases = config --get-regexp ^alias
