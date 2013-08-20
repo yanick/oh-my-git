@@ -36,3 +36,5 @@
 
 	# Prints a list of all files ignored	
 	ignored = ls-files --others -i --exclude-standard
+
+	aliases = config --get-regexp alias
