@@ -6,7 +6,7 @@
 	pretty = oneline
 
 [color]
-	ui = true
+	ui = false
 
 [alias]
 	co = commit -m
@@ -32,9 +32,13 @@
 	undo = reset --soft HEAD^
 
 	# Stand-up! Shows a list of what I worked on yesterday so I can be prepared for my stand-up meeting.
-	standup = "!git log --since yesterday  --author `git config user.email` --pretty=short"
+	standup = "!git log --since yesterday  --author `git config user.email` --pretty=oneline"
 
 	# Prints a list of all files ignored
 	ignored = ls-files --others -i --exclude-standard
 
+	# List all available aliases
 	aliases = config --get-regexp ^alias
+
+	# Word diff
+	diffw = diff --word-diff=plain
