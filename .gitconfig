@@ -42,3 +42,8 @@
 
 	# Word diff
 	diffw = diff --word-diff=plain
+
+	# Running gitk in the background
+	k = "!gitk&"
+	kk = "!gitk --all&"
+	ka = "!git kk"
