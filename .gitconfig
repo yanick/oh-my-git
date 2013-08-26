@@ -47,3 +47,6 @@
 	k = "!gitk&"
 	kk = "!gitk --all&"
 	ka = "!git kk"
+
+	# Rename a branch
+	rename-branch = "!f() { current_branch=`git rev-parse --abbrev-ref HEAD` && git checkout -b $1 && git branch -d $current_branch;  }; f "
