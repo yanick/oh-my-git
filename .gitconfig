@@ -49,4 +49,5 @@
 	ka = "!git kk"
 
 	# Rename a branch
-	rename-branch = "!f() { current_branch=`git rev-parse --abbrev-ref HEAD` && git checkout -b $1 && git branch -d $current_branch;  }; f "
+	rename-current-branch = "!f() { current_branch=`git rev-parse --abbrev-ref HEAD` && git checkout --quiet -b $1 && git branch --quiet -d $current_branch; }; f "
+	rename-branch = "!f() { git branch $2 $1 && git branch --quiet -d $1; }; f "
