@@ -6,7 +6,7 @@
 	pretty = oneline
 
 [color]
-	ui = false
+	ui = true
 
 [alias]
 	co = commit -m
