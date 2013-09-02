@@ -2,6 +2,9 @@
 	name = Arialdo Martini
 	email = arialdomartini@gmail.com
 
+[core]
+	autocrlf = false
+
 [format]
 	pretty = oneline
 
