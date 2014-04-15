@@ -1,29 +1,28 @@
 # Symbols
-set -l is_a_git_repo_symbol '❤'
-set -l has_untracked_files_symbol '∿'
-set -l has_adds_symbol '+'
-set -l has_deletions_symbol '-'
-set -l has_deletions_cached_symbol '✖'
-set -l has_modifications_symbol '✎'
-set -l has_modifications_cached_symbol '☲'
-set -l ready_to_commit_symbol '→'
-set -l is_on_a_tag_symbol '⌫'
-set -l needs_to_merge_symbol 'ᄉ'
-set -l has_upstream_symbol '⇅'
-set -l detached_symbol '⚯ '
-set -l can_fast_forward_symbol '»'
-set -l has_diverged_symbol 'Ⴤ'
-set -l rebase_tracking_branch_symbol '↶'
-set -l merge_tracking_branch_symbol 'ᄉ'
-set -l should_push_symbol '↑'
-set -l has_stashes_symbol '★'
+set -l is_a_git_repo_symbol '❤ '
+set -l has_untracked_files_symbol '∿ '
+set -l has_adds_symbol '+ '
+set -l has_deletions_symbol '- '
+set -l has_deletions_cached_symbol '✖ '
+set -l has_modifications_symbol '✎ '
+set -l has_modifications_cached_symbol '☲ '
+set -l ready_to_commit_symbol '→ '
+set -l is_on_a_tag_symbol '⌫ '
+set -l needs_to_merge_symbol 'ᄉ '
+set -l has_upstream_symbol '⇅ '
+set -l detached_symbol '⚯  '
+set -l can_fast_forward_symbol '» '
+set -l has_diverged_symbol 'Ⴤ '
+set -l rebase_tracking_branch_symbol '↶ '
+set -l merge_tracking_branch_symbol 'ᄉ '
+set -l should_push_symbol '↑ '
+set -l has_stashes_symbol '★ '
 
     # Flags
 set -l display_has_upstream false
 set -l display_tag false
 set -l display_tag_name true
 set -l two_lines true
-set -l finally '\w ∙ '
 set -l use_color_off false
 
     # Colors
@@ -35,6 +34,21 @@ set -l yellow yellow # "\[\033[1;33m\]"
 set -l violet purple  # "\[\033[0;35m\]"
 set -l branch_color brown  # "\[\033[1;34m\]"
 set -l reset  "\[\033[0m\]"
+
+# final line
+echo  $is_a_git_repo_symbol $has_stashes_symbol $has_untracked_files_symbol \
+    $has_adds_symbol $has_deletions_symbol $has_deletions_cached_symbol \
+    $has_modifications_symbol $has_modifications_cached_symbol \
+    $ready_to_commit_symbol $detached_symbol $has_upstream_symbol \
+    detached -1 $rebase_tracking_branch_symbol $merge_tracking_branch_symbol \
+    +1 $can_fast_forward_symbol $should_push_symbol +3 \
+    '(' $current_branch $type_of_upstream $upstream ')' \
+    $is_on_a_tag_symbol 'tag'
+
+exit
+
+
+
 
 function enrich 
     set -l flag $argv[1]
@@ -49,7 +63,7 @@ function enrich
         set symbol ' '
     end
 
-    echo -n $symbol " "
+    echo -n $symbol
     set_color normal
     set_color -b normal
 end
@@ -58,26 +72,26 @@ function build_git_prompt
 
     # Git info
     set current_commit_hash (git rev-parse HEAD 2> /dev/null)
-    if test -n $current_commit_hash
+    if test -n "$current_commit_hash"
         set is_a_git_repo true
     else
         return
     end
     
-    set current_branch (git rev-parse --abbrev-ref HEAD 2> /dev/null)
+    set current_branch (git rev-parse --abbrev-ref HEAD 2> /dev/null | tr -d ' ')
 
-    if test $current_branch = 'HEAD'
+    if test "$current_branch" = 'HEAD'
         set detached true
     else
         set detached false
     end
 
     set number_of_logs (git log --pretty=oneline -n1 2> /dev/null | wc -l)
-    if test $number_of_logs -eq 0
+    if test "$number_of_logs" -eq 0
         set just_init true
     else
         set upstream (git rev-parse --symbolic-full-name --abbrev-ref @{upstream} 2> /dev/null)
-        if test -n "$upstream" -a "$upstream" != "@{upstream}"
+        if test -n "$upstream" -a "$upstream" != "@upstream"
             set has_upstream true
         else 
             set has_upstream false;
@@ -85,10 +99,11 @@ function build_git_prompt
 
         set git_status (git status --porcelain 2> /dev/null)
     
-        if echo $git_status | grep -q -E '($\n|^).M'
-            set has_modifications true
-        else
-            set has_modifications false
+        set has_modifications false
+        for s in $git_status
+            if echo $s | grep -q -E '^.M'
+                set has_modifications true
+            end
         end
     
         if echo $git_status | grep -q -E '($\n|^)M'
@@ -127,7 +142,7 @@ function build_git_prompt
     
         set number_of_untracked_files (echo $git_status | grep -c "^??")
 
-        if test $number_of_untracked_files -gt 0 
+        if test "$number_of_untracked_files" -gt 0 
             set has_untracked_files true
         else 
             set has_untracked_files false
@@ -143,7 +158,9 @@ function build_git_prompt
         set has_diverged false
         set can_fast_forward false
 
-        if test $has_upstream = true 
+        set commits_ahead 0
+        set commits_behind 0
+        if test "$has_upstream" = true 
             set commits_diff (git log --pretty=oneline --topo-order --left-right {$current_commit_hash}...{$upstream} 2> /dev/null)
             set commits_ahead (echo $commits_diff | grep -c "^<" )
             set commits_behind ( echo $commits_diff | grep -c "^>")
@@ -217,28 +234,25 @@ function build_git_prompt
                 end
             end
 
-            enrich true $current_branch $green
+            echo -n "("
+            enrich true "$current_branch" $green
             enrich true "$type_of_upstream {$upstream}"
+            echo -n ")"
         else
+            echo -n "("
             enrich true $current_branch $green
+            echo -n ")"
         end
     end
 
-#    if [[ $display_tag == true && $is_on_a_tag == true ]]; then
-#        PS1="${PS1} ${yellow}${is_on_a_tag_symbol}${reset}"
-#    fi
-#    if [[ $display_tag_name == true && $is_on_a_tag == true ]]; then
-#        PS1="${PS1} ${yellow}[${tag_at_current_commit}]${reset}"
-#    fi
-#    PS1="${PS1}      "
-#    
-#    if [[ $two_lines == true && $is_a_git_repo == true ]]; then
-#        break='\n'
-#    else
-#        break=''
-#    fi
-    
-    echo -n $break $finally
+    if test "$display_tag" = true
+        enrich true "$is_on_a_tag_symbol" $yellow
+    end
+
+    if test "$display_tag_name" = true -a $is_on_a_tag = true
+        enrich true "$tag_at_current_commit" $yellow
+    end
+
 end
 
 
