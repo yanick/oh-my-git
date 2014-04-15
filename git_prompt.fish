@@ -1,3 +1,23 @@
+function echo_success 
+    eval $argv
+    set -l st $status
+    echo ( math ! $status )
+    return $st
+end
+
+function echo_test
+    echo_success test $argv
+end
+
+function test_boolean
+    set -l value $argv[1]
+
+    if test $value = "" -o $value = "0" -o $value = "false"
+        return 0
+    end
+
+    return 1
+end
 
 function show_all_symbols
     # final line
@@ -20,7 +40,7 @@ function enrich
         set_color normal
     end
 
-    if test $flag = false 
+    if test $flag = false -o $flag -eq 0
         set symbol (printf "%"(echo $symbol | wc -c )"s")
     end
 
@@ -29,7 +49,7 @@ function enrich
     set_color -b normal
 end
 
-function print_git_prompt
+function git_prompt
     # Symbols
     set -l is_a_git_repo_symbol '❤ '
     set -l has_untracked_files_symbol '∿ '
@@ -67,32 +87,29 @@ function print_git_prompt
     set -l branch_color brown  # "\[\033[1;34m\]"
     set -l reset  "\[\033[0m\]"
 
+    set -l color_okay    green
+    set -l color_todo    yellow
+    set -l color_achtung red
+
     # Git info
     set current_commit_hash (git rev-parse HEAD 2> /dev/null)
-    if test -n "$current_commit_hash"
-        set is_a_git_repo true
-    else
+
+    if test -z "$current_commit_hash"
         return
     end
 
     set current_branch (git rev-parse --abbrev-ref HEAD 2> /dev/null | tr -d ' ')
 
-    if test "$current_branch" = 'HEAD'
-        set detached true
-    else
-        set detached false
-    end
+    set detached ( test_echo "$current_branch" = 'HEAD' )
 
     set number_of_logs (git log --pretty=oneline -n1 2> /dev/null | wc -l)
+
     if test "$number_of_logs" -eq 0
         set just_init true
     else
-        set upstream (git rev-parse --symbolic-full-name --abbrev-ref @{upstream} 2> /dev/null)
-        if test -n "$upstream" -a "$upstream" != "@upstream"
-            set has_upstream true
-        else 
-            set has_upstream false;
-        end
+        set upstream (git rev-parse --symbolic-full-name --abbrev-ref @\{upstream\} 2> /dev/null)
+
+        set has_upstream ( echo_test -n "$upstream" -a "$upstream" != @upstream )
 
         set git_status (git status --porcelain 2> /dev/null)
     
@@ -115,49 +132,33 @@ function print_git_prompt
             set has_adds false
         end
     
-        if echo $git_status | grep -q -E '($\n|^).D'
-            set has_deletions true
-        else 
-            set has_deletions false
-        end
+        set has_deletions ( echo_success "echo $git_status | grep -q -E '(\$\n|^).D'" )
 
-        if echo $git_status | grep -q -E '($\n|^)D'
-            set has_deletions_cached true
-        else 
-            set has_deletions_cached false
-        end
+        set has_deletions_cached ( echo_success "echo $git_status | grep -q -E '\$\n|^)D'" )
 
         if begin
                 echo $git_status | grep -q -E '($\n|^)[MAD]'; 
                 and not echo $git_status | grep -q -E '($\n|^)[MAD?]';  
             end;
-            set ready_to_commit true
+            set ready_to_commit 1
         else
-            set ready_to_commit false
+            set ready_to_commit 0
         end
     
     
         set number_of_untracked_files (echo $git_status | grep -c "^??")
 
-        if test "$number_of_untracked_files" -gt 0 
-            set has_untracked_files true
-        else 
-            set has_untracked_files false
-        end
+        set has_untracked_files ( echo_test "$number_of_untracked_files" -gt 0 )
     
         set tag_at_current_commit (git describe --exact-match --tags $current_commit_hash 2> /dev/null)
-        if test -n $tag_at_current_commit
-            set is_on_a_tag true
-        else 
-            set is_on_a_tag false
-        end
+        set is_on_a_tag ( echo_test -n $tag_at_current_commit )
     
         set has_diverged false
         set can_fast_forward false
 
         set commits_ahead 0
         set commits_behind 0
-        if test "$has_upstream" = true 
+        if test $has_upstream -gt 0
             set commits_diff (git log --pretty=oneline --topo-order --left-right {$current_commit_hash}...{$upstream} 2> /dev/null)
             set commits_ahead (echo $commits_diff | grep -c "^<" )
             set commits_behind ( echo $commits_diff | grep -c "^>")
@@ -171,7 +172,8 @@ function print_git_prompt
             set can_fast_forward true
         end
     
-        set will_rebase (git config --get branch.{$current_branch}.rebase 2> /dev/null)
+        set will_rebase (git config --get branch.$current_branch.rebase 2> /dev/null)
+        echo $will_rebase
     
         set git_dir (git rev-parse --show-toplevel)
         set stash_file = $git_dir/refs/stash
@@ -188,7 +190,7 @@ function print_git_prompt
         end
     end
     
-    enrich $is_a_git_repo $is_a_git_repo_symbol $violet
+    enrich true $is_a_git_repo_symbol $violet
     enrich $has_stashes $has_stashes_symbol $yellow
     enrich $has_untracked_files $has_untracked_files_symbol $red
     enrich $has_adds $has_adds_symbol $yellow
@@ -224,16 +226,19 @@ function print_git_prompt
                 echo -n " -$commits_behind $has_diverged_symbol +$commits_ahead"
             else
                 if test $commits_behind -gt 0 
-                    echo -n " -{$commits_behind} {$can_fast_forward_symbol} "
+                    echo -n " -{$commits_behind} $can_fast_forward_symbol "
                 end
                 if test $commits_ahead -gt 0
-                    echo -n " {$should_push_symbol} +{$commits_ahead} "
+                    echo -n " $should_push_symbol +$commits_ahead "
                 end
             end
 
             echo -n "("
             enrich true "$current_branch" $green
-            enrich true "$type_of_upstream {$upstream}"
+
+            set upstream ( echo $upstream | sed s/\\/$current_branch// )
+
+            enrich true " $type_of_upstream$upstream"
             echo -n ")"
         else
             echo -n "("
@@ -243,11 +248,7 @@ function print_git_prompt
     end
 
     if test "$display_tag" = true
-        enrich true "$is_on_a_tag_symbol" $yellow
-    end
-
-    if test "$display_tag_name" = true -a $is_on_a_tag = true
-        enrich true "$tag_at_current_commit" $yellow
+        enrich true "$is_on_a_tag_symbol $tag_at_current_commit" $green
     end
 
 end
