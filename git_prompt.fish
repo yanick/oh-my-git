@@ -51,22 +51,22 @@ end
 
 function git_prompt
     # Symbols
-    set -l is_a_git_repo_symbol '❤ '
+    set -l is_a_git_repo_symbol ' ' # '❤ '  ±
     set -l has_untracked_files_symbol '∿ '
     set -l has_adds_symbol '+ '
     set -l has_deletions_symbol '- '
     set -l has_deletions_cached_symbol '✖ '
     set -l has_modifications_symbol '✎ '
     set -l has_modifications_cached_symbol '☲ '
-    set -l ready_to_commit_symbol '→ '
+    set -l ready_to_commit_symbol '▪► ' #'→ '▬►
     set -l is_on_a_tag_symbol '⌫ '
     set -l needs_to_merge_symbol 'ᄉ '
     set -l has_upstream_symbol '⇅ '
     set -l detached_symbol '⚯  '
-    set -l can_fast_forward_symbol '» '
+    set -l can_fast_forward_symbol '» '  
     set -l has_diverged_symbol 'Ⴤ '
     set -l rebase_tracking_branch_symbol '↶ '
-    set -l merge_tracking_branch_symbol 'ᄉ '
+    set -l merge_tracking_branch_symbol 'λ ' # 'ᄉ '
     set -l should_push_symbol '↑ '
     set -l has_stashes_symbol '★ '
 
@@ -100,7 +100,7 @@ function git_prompt
 
     set current_branch (git rev-parse --abbrev-ref HEAD 2> /dev/null | tr -d ' ')
 
-    set detached ( test_echo "$current_branch" = 'HEAD' )
+    set detached ( echo_test "$current_branch" = 'HEAD' )
 
     set number_of_logs (git log --pretty=oneline -n1 2> /dev/null | wc -l)
 
@@ -117,28 +117,34 @@ function git_prompt
         for s in $git_status
             if echo $s | grep -q -E '^.M'
                 set has_modifications true
+                break
             end
         end
     
-        if echo $git_status | grep -q -E '($\n|^)M'
-            set has_modifications_cached true
-        else 
-            set has_modifications_cached false
+        set has_modifications_cached 0
+        for s in $git_status
+            if echo $s | grep -q -E '^M'
+                set has_modifications_cached true
+                break
+            end
+        end
+
+        set has_adds 0 
+        for s in $git_status
+            if echo $s | grep -q -E '^A'
+                set has_adds true
+                break
+            end
         end
     
-        if echo $git_status | grep -q -E '($\n|^)A'
-            set has_adds true
-        else 
-            set has_adds false
-        end
-    
-        set has_deletions ( echo_success "echo $git_status | grep -q -E '(\$\n|^).D'" )
+        set has_deletions ( echo_success "echo $git_status | grep -q -E '(\n|^).D'" )
 
-        set has_deletions_cached ( echo_success "echo $git_status | grep -q -E '\$\n|^)D'" )
+        set has_deletions_cached ( echo_success "echo $git_status | grep -q -E '(\n|^)D'" )
 
+        echo $git_status
         if begin
-                echo $git_status | grep -q -E '($\n|^)[MAD]'; 
-                and not echo $git_status | grep -q -E '($\n|^)[MAD?]';  
+                echo $git_status | grep -q -E '(\n|^)[MAD]'; 
+                and not echo $git_status | grep -q -E '(\n|^).[MAD?]';
             end;
             set ready_to_commit 1
         else
